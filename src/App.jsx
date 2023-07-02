@@ -6,24 +6,12 @@ function App() {
   const videoRef = useRef()
   const canvasRef = useRef()
   const [initializing, setInitializing] = useState()
+  const videoWidth = 640
+  const videoHeight = 480
 
   const handleVideo = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true })
     videoRef.current.srcObject = stream
-
-    // canvasRef.current.innerHtml = faceapi.createCanvasFromMedia(
-    //   videoRef.current
-    // )
-    // faceapi.matchDimensions(canvasRef.current, {
-    //   height: 750,
-    //   width: 476
-    // })
-    // const resized = faceapi.resizeResults(detections, {
-    //   height: 750,
-    //   width: 476
-    // })
-    // faceapi.draw.drawDetections(canvasRef.current, resized)
-    // faceapi.draw.drawFaceExpressions(canvasRef.current, resized)
   }
 
   useEffect(() => {
@@ -42,30 +30,40 @@ function App() {
   }, [])
 
   const handleVideoOnPlay = () => {
-    // setInterval(async () => {
-    //   if (initializing) {
-    //     setInitializing(false)
-    //   }
-    //   const detections = await faceapi
-    //     .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-    //     .withFaceLandmarks()
-    //     .withFaceExpressions()
-    //   console.log(detections)
-    // }, 1000)
+    setInterval(async () => {
+      if (initializing) {
+        setInitializing(false)
+      }
+      const displaySize = {
+        width: videoWidth,
+        height: videoHeight
+      }
+      canvasRef.current.innerHtml = faceapi.createCanvasFromMedia(
+        videoRef.current
+      )
+      faceapi.matchDimensions(canvasRef.current, displaySize)
+      const detections = await faceapi
+        .detectSingleFace(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions()
+        )
+        .withFaceLandmarks()
+        .withFaceExpressions()
+      const resizedDetections = faceapi.resizeResults(detections, displaySize)
+      canvasRef.current
+        .getContext('2d')
+        .clearRect(0, 0, videoWidth, videoHeight)
+      faceapi.draw.drawDetections(canvasRef.current, resizedDetections)
+    }, 100)
   }
   return (
-    <div className="app">
+    <>
       <span>{initializing ? 'Inicializando modelos' : 'Pronto'}</span>
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        height="750"
-        width="476"
-        onPlay={handleVideoOnPlay}
-      />
-      <canvas ref={canvasRef} height="750" width="476" />
-    </div>
+      <div className="app">
+        <video ref={videoRef} autoPlay muted onPlay={handleVideoOnPlay} />
+        <canvas ref={canvasRef} />
+      </div>
+    </>
   )
 }
 

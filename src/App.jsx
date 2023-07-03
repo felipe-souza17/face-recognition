@@ -31,19 +31,20 @@ function App() {
   }, [])
 
   const getLabeledFaceDescriptions = () => {
-    const labels = ['felipe', 'magno']
+    const labels = ['Felipe', 'Magno', 'Laercio', 'Catarina']
 
     return Promise.all(
       labels.map(async label => {
         const descriptions = []
-        for (let i = 1; i <= 2; i++) {
-          const image = await faceapi.fetchImage(`/assets/${label}.jpg`)
+        for (let i = 1; i <=  1; i++) {
+          const image = await faceapi.fetchImage(`/assets/${label}/${i}.jpg`)
 
+          
           const detections = await faceapi
             .detectSingleFace(image)
             .withFaceLandmarks()
             .withFaceDescriptor()
-
+            
           descriptions.push(detections.descriptor)
         }
         return new faceapi.LabeledFaceDescriptors(label, descriptions)
@@ -52,8 +53,8 @@ function App() {
   }
 
   const faceRecognition = async () => {
-    // const labeledFaceDescriptors = await getLabeledFaceDescriptions()
-    // const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors)
+    const labeledFaceDescriptors = await getLabeledFaceDescriptions()
+    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors)
     canvasRef.current.innerHtml = faceapi.createCanvasFromMedia(
       videoRef.current
     )
@@ -67,25 +68,21 @@ function App() {
     }
     setInterval(async () => {
       const detections = await faceapi
-        .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceExpressions()
+        .detectSingleFace(videoRef.current).withFaceLandmarks().withFaceDescriptor()
       const resizedDetections = faceapi.resizeResults(detections, displaySize)
       canvasRef.current
         .getContext('2d')
         .clearRect(0, 0, videoWidth, videoHeight)
-      // console.log(resizedDetections)
-      // const results = resizedDetections.map(d => {
-      //   return faceMatcher.findBestMatch(d.labeledDescriptors.descriptors)
-      // })
+      const results =  faceMatcher.findBestMatch(resizedDetections.descriptor)
+ 
 
-      // results.forEach((result, i) => {
-      //   const box = resizedDetections[i].detection.box
-      //   const drawBox = new faceapi.draw.DrawBox(box, { label: result })
-      //   drawBox.draw(canvasRef.current)
-      // })
-      faceapi.draw.drawDetections(canvasRef.current, resizedDetections)
-    }, 100)
+        const box = resizedDetections.detection.box
+        const drawBox = new faceapi.draw.DrawBox(box, { label: results })
+        drawBox.draw(canvasRef.current)
+
+      // faceapi.draw.drawDetections(canvasRef.current, resizedDetections)
+      // faceapi.draw.drawFaceExpressions(canvasRef.current, resizedDetections)
+    }, 1000)
   }
   return (
     <>
